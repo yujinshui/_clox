@@ -1,0 +1,6 @@
+.vscode/
+debug.dSYM/
+main.dSYM/
+main
+test.js
+
