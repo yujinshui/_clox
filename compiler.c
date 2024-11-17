@@ -65,6 +65,13 @@ typedef struct {
   bool isLocal;
 } Upvalue;
 
+typedef struct Circulation{
+  struct Circulation* enclosing;
+  int loopStart; //记录循环开始位置
+  int _break[UINT8_COUNT];  //记录break指令位置
+  int _break_count;         //break指令数量
+} Circulation;
+
 typedef struct Compiler{
   struct Compiler* enclosing;
   ObjFunction* function; //当前处理的函数
@@ -82,9 +89,14 @@ typedef struct ClassCompiler {
   bool hasSuperclass;
 } ClassCompiler;
 
+
+
+
 Parser parser;
 Compiler* current = NULL;
 ClassCompiler* currentClass = NULL; //用于记录类，防止在顶层定义this
+Circulation * currentCirculation = NULL; //用于记录循环
+
 /****************************************/
 /****    private function declaration  **/
 /****************************************/
@@ -122,6 +134,7 @@ static void classDeclaration();
 
 /* statement */
 static void printStatement();
+static void breakStatement();
 static void expressionStatement();
 static void ifStatement();
 static void whileStatement();
@@ -1064,6 +1077,8 @@ static void classDeclaration() {
 static void statement() {
   if (match(TOKEN_PRINT)) {
     printStatement();
+  } else if (match(TOKEN_BREAK)) {
+    breakStatement();
   } else if (match(TOKEN_FOR)) {
     forStatement();
   }  else if (match(TOKEN_RETURN)) {
@@ -1087,6 +1102,16 @@ static void printStatement() {
   expression();
   consume(TOKEN_SEMICOLON, "Expect ';' after value.");
   emitByte(OP_PRINT);
+}
+
+static void breakStatement(){
+  if (currentCirculation == NULL) {
+    errorAtPrevious("Can't use 'break' outside of a Circulation.");
+    return;
+  }
+  int breakJump = emitJump(OP_JUMP);
+  currentCirculation->_break[currentCirculation->_break_count++] = breakJump;
+  consume(TOKEN_SEMICOLON, "Expect ';' after break.");
 }
 
 
@@ -1144,6 +1169,12 @@ static void ifStatement() {
 
 static void whileStatement() {
   int loopStart = currentChunk()->count;   
+  Circulation loop;
+  loop.loopStart = loopStart;
+  loop._break_count = 0;
+  loop.enclosing = currentCirculation;
+  currentCirculation = &loop;
+
   consume(TOKEN_LEFT_PAREN, "Expect '(' after 'while'.");
   expression();
   consume(TOKEN_RIGHT_PAREN, "Expect ')' after condition.");
@@ -1154,8 +1185,18 @@ static void whileStatement() {
 
   emitLoop(loopStart);
 
+ 
+
+  //为break填充位置信息
+  for (size_t i = 0; i < loop._break_count; i++)
+  {
+    patchJump(loop._break[i]);
+  }
+  
   patchJump(exitJump);
   emitByte(OP_POP);
+
+  currentCirculation = currentCirculation->enclosing;
 }
 
 
@@ -1171,6 +1212,12 @@ static void forStatement() {
   }
   int loopStart = currentChunk()->count;
   int exitJump = -1;
+
+  Circulation loop;
+  loop.loopStart = loopStart;
+  loop._break_count = 0;
+  loop.enclosing = currentCirculation;
+  currentCirculation = &loop;
 
   if (!match(TOKEN_SEMICOLON)) {
       expression();
@@ -1190,12 +1237,18 @@ static void forStatement() {
 
     emitLoop(loopStart);
     loopStart = incrementStart;
+    loop.loopStart = loopStart;
     patchJump(bodyJump);
   }
 
   statement();
   emitLoop(loopStart);
 
+  //为break填充位置信息
+  for (size_t i = 0; i < loop._break_count; i++)
+  {
+    patchJump(loop._break[i]);
+  }
 
   if (exitJump != -1) {
     patchJump(exitJump);
@@ -1203,7 +1256,7 @@ static void forStatement() {
   }
 
   beginScope();
-
+  currentCirculation = currentCirculation->enclosing;
 }
 
 
