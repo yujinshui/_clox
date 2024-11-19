@@ -135,6 +135,7 @@ static void classDeclaration();
 /* statement */
 static void printStatement();
 static void breakStatement();
+static void continueStatement();
 static void expressionStatement();
 static void ifStatement();
 static void whileStatement();
@@ -1079,6 +1080,8 @@ static void statement() {
     printStatement();
   } else if (match(TOKEN_BREAK)) {
     breakStatement();
+  } else if (match(TOKEN_CONTINUE)) {
+    continueStatement();
   } else if (match(TOKEN_FOR)) {
     forStatement();
   }  else if (match(TOKEN_RETURN)) {
@@ -1114,6 +1117,14 @@ static void breakStatement(){
   consume(TOKEN_SEMICOLON, "Expect ';' after break.");
 }
 
+static void continueStatement(){
+  if (currentCirculation == NULL) {
+    errorAtPrevious("Can't use 'continue' outside of a Circulation.");
+    return;
+  }
+  emitLoop(currentCirculation->loopStart);
+  consume(TOKEN_SEMICOLON, "Expect ';' after break.");
+}
 
 static void expressionStatement() {
   expression();
