@@ -1,0 +1,11 @@
+var i = 1;
+var j = i-- + i;
+print i;
+print j;
+
+{
+  var i = 1;
+  var j = i-- + i;
+  print i;
+  print j;
+}

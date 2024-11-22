@@ -703,6 +703,14 @@ static void namedVariable(Token name, bool canAssign) {
     emitBytes(setOp, (uint8_t)arg);
   } else {
     emitBytes(getOp, (uint8_t)arg);
+    //处理后缀++ --
+    if (match(TOKEN_DECREASE) || match(TOKEN_INCREASE)) {
+      emitBytes(getOp, (uint8_t)arg);
+      emitConstant(NUMBER_VAL(1));
+      emitByte(parser.previous.type == TOKEN_DECREASE ? OP_SUBTRACT : OP_ADD);
+      emitBytes(setOp, (uint8_t)arg);
+      emitByte(OP_POP);
+    } 
   }  
 }
 
