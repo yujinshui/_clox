@@ -284,6 +284,18 @@ static InterpretResult run() {
       case OP_LESS: BINARY_OP(BOOL_VAL, <); break;
       case OP_LESS_EQUAL: BINARY_OP(BOOL_VAL, <=); break;
 
+      case OP_TERNARY: {
+        Value two_exp = pop();
+        Value one_exp = pop();
+        Value logic = pop();
+        if (isFalsey(logic)) {
+          push(two_exp);
+        } else {
+          push(one_exp);
+        }
+        break;
+      }
+
       case OP_ADD:      {
         if (IS_STRING(peek(0)) && IS_STRING(peek(1))) {
           concatenate();

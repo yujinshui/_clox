@@ -42,6 +42,8 @@ typedef enum {
   OP_GREATER_EQUAL, //>=
   OP_LESS,      //<
   OP_LESS_EQUAL,    //<=
+  
+  OP_TERNARY, //  三元操作
 
   OP_ADD,   //  +
   OP_SUBTRACT, // -

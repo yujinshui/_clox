@@ -5,7 +5,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-// #define DEBUG_TRACE_EXECUTION // 执行时打印字节码
+#define DEBUG_TRACE_EXECUTION // 执行时打印字节码
 // #define DEBUG_PRINT_CODE      // 打印字节码
 
 // #define DEBUG_STRESS_GC

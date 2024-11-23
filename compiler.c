@@ -121,7 +121,7 @@ static void call(bool canAssign);
 static void dot(bool canAssign);
 static void this_(bool canAssign);
 static void super_(bool canAssign);
-
+static void ternary(bool canAssign);
 
 // compile statement
 static void declaration();
@@ -189,6 +189,7 @@ ParseRule rules[] = {
   [TOKEN_WHILE]         = {NULL,     NULL,   PREC_NONE},
   [TOKEN_ERROR]         = {NULL,     NULL,   PREC_NONE},
   [TOKEN_EOF]           = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_QUESTION]      = {NULL,     ternary,   PREC_ASSIGNMENT},
 };
 
 
@@ -788,7 +789,7 @@ static void unary(bool canAssign) {
 
   TokenType operatorType = parser.previous.type;
   // Compile the operand.
-  parsePrecedence(PREC_ASSIGNMENT);
+  parsePrecedence(PREC_UNARY);
   goto *unaryDisptab[operatorType];
   // Emit the operator instruction.
 TOKEN_BANG:
@@ -961,6 +962,14 @@ static void super_(bool canAssign) {
 static void call(bool canAssign) {
   uint8_t argCount = argumentList();
   emitBytes(OP_CALL, argCount);
+}
+
+
+static void ternary(bool canAssign) {
+  expression();
+  consume(TOKEN_COLON, "Expect ':' after expression.");
+  expression();
+  emitByte(OP_TERNARY);
 }
 
 
